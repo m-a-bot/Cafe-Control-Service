@@ -5,7 +5,7 @@ WORKDIR /src
 ENV POETRY_VERSION=1.8.2
 RUN pip install --no-cache-dir "poetry==$POETRY_VERSION"
 
-COPY ["pyproject.toml", "poetry.lock", "/src"]
+COPY ["pyproject.toml", "poetry.lock", "/src/"]
 RUN poetry config virtualenvs.create false \
     && poetry install --only main --no-interaction --no-ansi
 

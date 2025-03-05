@@ -1,0 +1,47 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - feature
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SVC_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Clear npm cache
+        run: npm cache clean --force
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+#      - name: Create .env file
+#        run: |
+#          touch .env
+#          echo POSTGRES_DB=${{ secrets.POSTGRES_DB }} >> .env
+#          echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> .env
+#          echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
+#          echo POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} >> .env
+#          echo POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} >> .env
+#          echo DEBUG=${{ secrets.DEBUG }} >> .env
+#          echo STRIPE_PUBLIC_KEY=${{ secrets.STRIPE_PUBLIC_KEY }} >> .env
+#          echo STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} >> .env
+#          echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
+#          echo ALLOWED_HOST=${{ secrets.ALLOWED_HOST }} >> .env
+#          echo CSRF_TRUSTED_HOST=${{ secrets.CSRF_TRUSTED_HOST }} >> .env
+#          cat .env
+
+
+      - name: Deploy to Railway
+        run: railway up --service=${{ env.SVC_ID }} --detach
