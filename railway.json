@@ -1,0 +1,10 @@
+{
+    "$schema": "https://railway.com/railway.schema.json",
+    "build": {
+      "builder": "NIXPACKS"
+    },
+    "deploy": {
+      "preDeployCommand": "sh -c 'python app/manage.py migrate && python app/manage.py createsuperuser --no-input --username $DJANGO_SUPERUSER_USERNAME --email $DJANGO_SUPERUSER_EMAIL || echo Superuser already exists'",
+      "startCommand": "python app/manage.py runserver 0.0.0.0:8080"
+    }
+  }

@@ -31,7 +31,9 @@ DEBUG = os.getenv("DEBUG") == "DEBUG"
 
 ALLOWED_HOSTS = ["*"]
 
-CSRF_TRUSTED_ORIGINS = ["http://*", "https://*"]
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}",
+]
 
 LOGGING = {
     "version": 1,
@@ -104,6 +106,7 @@ DATABASES = {
         "PORT": os.getenv("POSTGRES_PORT"),
     }
 }
+DATABASES["default"]["OPTIONS"] = {"client_encoding": "UTF8"}
 
 
 # Password validation
