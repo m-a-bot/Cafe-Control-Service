@@ -28,6 +28,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 API_TOKEN = os.getenv("SECRET_API_TOKEN")
 
+APPEND_SLASH = False
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "DEBUG"
 
@@ -148,7 +150,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-# STATICFILES_DIRS = [BASE_DIR / "static"]  # если у вас есть кастомные статические файлы
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
