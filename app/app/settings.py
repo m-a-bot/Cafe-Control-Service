@@ -28,6 +28,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 API_TOKEN = os.getenv("SECRET_API_TOKEN")
 
+APPEND_SLASH = False
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "DEBUG"
 
@@ -62,12 +64,14 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -75,6 +79,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "cafe_control.middleware.TokenRequiredMiddleware",
 ]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 ROOT_URLCONF = "app.urls"
 
@@ -148,7 +153,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-# STATICFILES_DIRS = [BASE_DIR / "static"]  # если у вас есть кастомные статические файлы
+# STATICFILES_DIRS = [
+#     BASE_DIR / "static",
+# ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type

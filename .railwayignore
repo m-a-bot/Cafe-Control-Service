@@ -1,4 +1,5 @@
 # .railwayignore
+**/staticfiles/
 .env.keys
 !.env.production
 
