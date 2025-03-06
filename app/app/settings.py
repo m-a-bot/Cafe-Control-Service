@@ -26,6 +26,8 @@ load_dotenv(os.path.join(BASE_DIR.parent, ".env"))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
 
+API_TOKEN = os.getenv("SECRET_API_TOKEN")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "DEBUG"
 
@@ -53,6 +55,7 @@ LOGGING = {
 # Application definition
 
 INSTALLED_APPS = [
+    "cafe_app",
     "cafe_control",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -70,6 +73,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "cafe_control.middleware.TokenRequiredMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -106,7 +110,7 @@ DATABASES = {
         "PORT": os.getenv("POSTGRES_PORT"),
     }
 }
-DATABASES["default"]["OPTIONS"] = {"client_encoding": "UTF8"}
+# DATABASES["default"]["OPTIONS"] = {"client_encoding": "UTF8"}
 
 
 # Password validation
@@ -144,6 +148,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+# STATICFILES_DIRS = [BASE_DIR / "static"]  # если у вас есть кастомные статические файлы
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

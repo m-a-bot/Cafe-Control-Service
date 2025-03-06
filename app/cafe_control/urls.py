@@ -16,6 +16,38 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import path
 
-urlpatterns = []
+from .views import (
+    ChangeStatusView,
+    FilteredOrdersView,
+    OrderItemView,
+    OrdersView,
+    OrderView,
+    TotalPriceView,
+)
+
+urlpatterns = [
+    path("orders/<int:id>/", OrderView.as_view(), name="order-detail"),
+    path("orders/", OrdersView.as_view(), name="orders"),
+    path(
+        "filtered-orders/",
+        FilteredOrdersView.as_view(),
+        name="filtered-orders",
+    ),
+    path(
+        "orders/<int:id>/status/",
+        ChangeStatusView.as_view(),
+        name="change-order-status",
+    ),
+    path(
+        "orders/total_price/",
+        TotalPriceView.as_view(),
+        name="total-order-price",
+    ),
+    path(
+        "orders/<int:id>/items/",
+        OrderItemView.as_view(),
+        name="order-item",
+    ),
+]
