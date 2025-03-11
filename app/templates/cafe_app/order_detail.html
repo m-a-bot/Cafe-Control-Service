@@ -11,8 +11,6 @@
 <body>
     {% include "cafe_app/topbar.html" %}
 
-    {% include "cafe_app/alerts.html" %}
-
     <div style="place-items: center; margin: 0 auto; display: grid; height: 65vh;" class="order-container" data-url="{% url 'order_template-detail' order_id %}">
         {% include "cafe_app/order_template.html" %}
     </div>

@@ -1,12 +1,10 @@
 import json
 import logging
 
-from django import http, views
-from django.conf import settings
+from django import views
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Sum
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
@@ -22,24 +20,25 @@ from .models import Item, Order, OrderItem
 logger = logging.getLogger(__name__)
 
 
-def find_total_price(order_id: int):
+def find_total_price(order_id: int) -> None:
     order = Order.objects.get(id=order_id)
     price_data = OrderItem.objects.filter(order=order).aggregate(
-        total=Sum("items_price")
+        total=Sum("items_price"),
     )
     order.total_price = price_data["total"] or 0
     order.save(update_fields=["total_price"])
 
 
-def add_items_to_order(order_id: int, item_ids: list[int], update=False):
-
+def add_items_to_order(
+    order_id: int, item_ids: list[int], update: bool = False
+) -> HttpResponse:
     if update:
         OrderItem.objects.filter(order_id=order_id).delete()
 
     for item_id in item_ids:
-
         order_item, created = OrderItem.objects.get_or_create(
-            order_id=order_id, item_id=item_id
+            order_id=order_id,
+            item_id=item_id,
         )
 
         if not created:
@@ -55,12 +54,14 @@ def add_items_to_order(order_id: int, item_ids: list[int], update=False):
     return JsonResponse({"detail": "Items was added to order"})
 
 
-def remove_items_from_order(order_id: int, item_ids: list[int]):
-
+def remove_items_from_order(
+    order_id: int, item_ids: list[int]
+) -> HttpResponse:
     for item_id in item_ids:
         try:
             order_item = OrderItem.objects.get(
-                order_id=order_id, item_id=item_id
+                order_id=order_id,
+                item_id=item_id,
             )
         except OrderItem.DoesNotExist:
             continue
@@ -81,10 +82,7 @@ def remove_items_from_order(order_id: int, item_ids: list[int]):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class OrderView(views.View):
-
-    # ok
-    def get(self, request: http.HttpRequest, id: int) -> HttpResponse:
-
+    def get(self, request: HttpRequest, id: int) -> HttpResponse:
         try:
             order = Order.objects.get(id=id)
             items_data = []
@@ -95,7 +93,7 @@ class OrderView(views.View):
                         "item_name": order_item.item.name,
                         "quantity": order_item.quantity,
                         "items_price": order_item.items_price,
-                    }
+                    },
                 )
         except ObjectDoesNotExist:
             return JsonResponse(
@@ -114,10 +112,10 @@ class OrderView(views.View):
 
         return JsonResponse(order_data)
 
-    def put(self, request: http.HttpRequest, id: int) -> HttpResponse:
+    def put(self, request: HttpRequest, id: int) -> HttpResponse:
         info_order = InfoOrderForm(json.loads(request.body))
         if not info_order.is_valid():
-            return http.HttpResponseBadRequest()
+            return JsonResponse({"detail": "Bad Request"}, status=400)
 
         data = info_order.cleaned_data
         item_ids = data.pop("items")
@@ -134,7 +132,7 @@ class OrderView(views.View):
                     "item_name": order_item.item.name,
                     "quantity": order_item.quantity,
                     "items_price": order_item.items_price,
-                }
+                },
             )
 
         order_data = {
@@ -147,8 +145,7 @@ class OrderView(views.View):
 
         return JsonResponse({"order": order_data})
 
-    # ok
-    def delete(self, request: http.HttpRequest, id: int) -> HttpResponse:
+    def delete(self, request: HttpRequest, id: int) -> HttpResponse:
         try:
             order = Order.objects.get(id=id)
             order.delete()
@@ -158,7 +155,7 @@ class OrderView(views.View):
                 status=404,
             )
         except Exception:
-            return http.HttpResponseBadRequest()
+            return JsonResponse({"detail": "Bad Request"}, status=400)
 
         return JsonResponse(
             {"detail": "Order was successfully deleted", "success": True},
@@ -168,8 +165,7 @@ class OrderView(views.View):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class OrdersView(views.View):
-    def get(self, request: http.HttpRequest) -> HttpResponse:
-
+    def get(self, request: HttpRequest) -> HttpResponse:
         filter_query = SearchQueryParamsForm(request.GET)
 
         table_number = filter_query.data.get("table_number")
@@ -188,18 +184,14 @@ class OrdersView(views.View):
         orders_data = []
         for order in orders:
             items_data = []
-            for (
-                order_item
-            ) in (
-                order.orderitem_set.all()
-            ):  # Используем обратную связь через промежуточную модель
+            for order_item in order.orderitem_set.all():
                 items_data.append(
                     {
                         "item_id": order_item.item.id,
                         "item_name": order_item.item.name,
                         "quantity": order_item.quantity,
                         "items_price": order_item.items_price,
-                    }
+                    },
                 )
 
             orders_data.append(
@@ -209,12 +201,13 @@ class OrdersView(views.View):
                     "items": items_data,
                     "total_price": order.total_price,
                     "status": order.status,
-                }
+                },
             )
 
         return JsonResponse({"orders": orders_data})
 
-    def post(self, request: http.HttpRequest) -> HttpResponse:
+    def post(self, request: HttpRequest) -> HttpResponse:
+        # logger.info(request.body)
         info_order = InfoOrderForm(json.loads(request.body))
         if not info_order.is_valid():
             return JsonResponse({"detail": "Bad Request"}, status=400)
@@ -233,8 +226,7 @@ class OrdersView(views.View):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class FilteredOrdersView(views.View):
-    def get(self, request: http.HttpRequest) -> HttpResponse:
-
+    def get(self, request: HttpRequest) -> HttpResponse:
         filter_query = FilterQueryParamsForm(request.GET)
 
         if not filter_query.is_valid():
@@ -259,18 +251,14 @@ class FilteredOrdersView(views.View):
         orders_data = []
         for order in orders:
             items_data = []
-            for (
-                order_item
-            ) in (
-                order.orderitem_set.all()
-            ):  # Используем обратную связь через промежуточную модель
+            for order_item in order.orderitem_set.all():
                 items_data.append(
                     {
                         "item_id": order_item.item.id,
                         "item_name": order_item.item.name,
                         "quantity": order_item.quantity,
                         "items_price": order_item.items_price,
-                    }
+                    },
                 )
 
             orders_data.append(
@@ -280,36 +268,31 @@ class FilteredOrdersView(views.View):
                     "items": items_data,
                     "total_price": order.total_price,
                     "status": order.status,
-                }
+                },
             )
         return JsonResponse({"orders": orders_data})
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ChangeStatusView(views.View):
-    # ok
-    def patch(self, request: http.HttpRequest, id: int) -> HttpResponse:
+    def patch(self, request: HttpRequest, id: int) -> HttpResponse:
         status_order_form = StatusOrderForm(json.loads(request.body))
         if not status_order_form.is_valid():
-            return http.HttpResponseBadRequest()
+            return JsonResponse({"detail": "Bad Request"}, status=400)
 
         status = status_order_form.cleaned_data.get("status")
         Order.objects.filter(id=id).update(status=status)
         order = Order.objects.get(id=id)
 
         items_data = []
-        for (
-            order_item
-        ) in (
-            order.orderitem_set.all()
-        ):  # Используем обратную связь через промежуточную модель
+        for order_item in order.orderitem_set.all():
             items_data.append(
                 {
                     "item_id": order_item.item.id,
                     "item_name": order_item.item.name,
                     "quantity": order_item.quantity,
                     "items_price": order_item.items_price,
-                }
+                },
             )
 
         order_data = {
@@ -325,8 +308,7 @@ class ChangeStatusView(views.View):
 
 
 class TotalPriceView(views.View):
-    def get(self, request: http.HttpRequest) -> HttpResponse:
-
+    def get(self, request: HttpRequest) -> HttpResponse:
         status_order_form = StatusOrderForm(request.GET)
         if not status_order_form.is_valid():
             orders = Order.objects
@@ -343,11 +325,10 @@ class TotalPriceView(views.View):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class OrderItemView(views.View):
-    # TODO добавлять, если уже есть item? да, считать количество
-    def post(self, request: http.HttpRequest, id: int) -> HttpResponse:
+    def post(self, request: HttpRequest, id: int) -> HttpResponse:
         info_item_form = InfoItemForm(json.loads(request.body))
         if not info_item_form.is_valid():
-            return http.HttpResponseBadRequest()
+            return JsonResponse({"detail": "Bad Request"}, status=400)
 
         item_id = info_item_form.cleaned_data["item_id"]
         item_ids = [
@@ -359,12 +340,13 @@ class OrderItemView(views.View):
 
         except ObjectDoesNotExist:
             return JsonResponse(
-                {"error": "Object not found", "success": False}, status=404
+                {"error": "Object not found", "success": False},
+                status=404,
             )
 
         return JsonResponse({"detail": "Item added to order", "success": True})
 
-    def get(self, request: http.HttpRequest, id: int) -> HttpResponse:
+    def get(self, request: HttpRequest, id: int) -> HttpResponse:
         try:
             order = Order.objects.get(id=id)
             items_data = []
@@ -375,7 +357,7 @@ class OrderItemView(views.View):
                         "item_name": order_item.item.name,
                         "quantity": order_item.quantity,
                         "items_price": order_item.items_price,
-                    }
+                    },
                 )
 
         except ObjectDoesNotExist:
@@ -383,10 +365,10 @@ class OrderItemView(views.View):
 
         return JsonResponse({"items": items_data})
 
-    def delete(self, request: http.HttpRequest, id: int) -> HttpResponse:
+    def delete(self, request: HttpRequest, id: int) -> HttpResponse:
         info_item_form = InfoItemForm(json.loads(request.body))
         if not info_item_form.is_valid():
-            return http.HttpResponseBadRequest()
+            return JsonResponse({"detail": "Bad Request"}, status=400)
 
         item_id = info_item_form.cleaned_data["item_id"]
         item_ids = [
@@ -401,7 +383,7 @@ class OrderItemView(views.View):
 
 
 class ItemsView(views.View):
-    def get(self, request: http.HttpRequest) -> HttpResponse:
+    def get(self, request: HttpRequest) -> HttpResponse:
         items = Item.objects.all()
         items_data = [
             {

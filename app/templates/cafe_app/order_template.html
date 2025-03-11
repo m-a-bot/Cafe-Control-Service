@@ -87,7 +87,6 @@
     const obj_to_wait = document.querySelector('.dialog-deny-close');
     if (obj_to_wait) {
         document.querySelector('.change-order-status').addEventListener('sl-change', function() {
-            //console.log(this.value); //добавить проверку, что статус принадлежит множеству
             let url = this.dataset.url;
             fetch(url, {
                 method: 'PATCH',
@@ -157,7 +156,7 @@
             const alert_success = container.querySelector(`sl-alert[variant="success"]`);
             const alert_warning = container.querySelector(`sl-alert[variant="warning"]`);
             
-            let url = this.dataset.url;  // Получаем URL из data-атрибута
+            let url = this.dataset.url;
             if (!url) {
                 console.error("URL не найден!");
                 return;
@@ -192,7 +191,7 @@
             const alert_success = container.querySelector(`sl-alert[variant="success"]`);
             const alert_warning = container.querySelector(`sl-alert[variant="warning"]`);
             
-            let url = this.dataset.url;  // Получаем URL из data-атрибута
+            let url = this.dataset.url;
             if (!url) {
                 console.error("URL не найден!");
                 return;

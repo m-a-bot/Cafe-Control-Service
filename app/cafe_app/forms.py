@@ -10,11 +10,17 @@ class FilterQueryParamsForm(forms.Form):
     BOOL_CHOICES = [("true", True), ("false", False)]
 
     is_pending = forms.TypedChoiceField(
-        choices=BOOL_CHOICES, required=True, coerce=lambda x: x == "true"
+        choices=BOOL_CHOICES,
+        required=True,
+        coerce=lambda x: x == "true",
     )
     is_ready = forms.TypedChoiceField(
-        choices=BOOL_CHOICES, required=True, coerce=lambda x: x == "true"
+        choices=BOOL_CHOICES,
+        required=True,
+        coerce=lambda x: x == "true",
     )
     is_paid = forms.TypedChoiceField(
-        choices=BOOL_CHOICES, required=True, coerce=lambda x: x == "true"
+        choices=BOOL_CHOICES,
+        required=True,
+        coerce=lambda x: x == "true",
     )

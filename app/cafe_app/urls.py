@@ -40,6 +40,8 @@ urlpatterns = [
     ),
     path("delete-order", DeleteOrderPageView.as_view(), name="delete-order"),
     path(
-        "search-orders", SearchOrdersPageView.as_view(), name="search-orders"
+        "search-orders",
+        SearchOrdersPageView.as_view(),
+        name="search-orders",
     ),
 ]

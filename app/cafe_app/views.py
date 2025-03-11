@@ -3,8 +3,7 @@ import logging
 
 import requests
 from django.conf import settings
-from django.http import HttpRequest, JsonResponse
-from django.shortcuts import redirect, render
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -20,11 +19,11 @@ logger = logging.getLogger(__name__)
 class HomePageView(TemplateView):
     template_name = "cafe_app/index.html"
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         context = self.get_context_data(**kwargs)
 
         total_order_price_url = request.build_absolute_uri(
-            reverse(f"total-order-price-api")
+            reverse("total-order-price-api"),
         )
 
         headers = {
@@ -56,7 +55,7 @@ class HomePageView(TemplateView):
             {
                 "total_price": total_price,
                 "total_is_paid_price": total_is_paid_price,
-            }
+            },
         )
 
         return self.render_to_response(context)
@@ -69,7 +68,7 @@ class OrdersPageView(TemplateView):
 class OrdersTemplatePageView(TemplateView):
     template_name = "cafe_app/orders_template.html"
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         context = self.get_context_data(**kwargs)
 
         headers = {
@@ -82,7 +81,7 @@ class OrdersTemplatePageView(TemplateView):
         orders_api_url = request.build_absolute_uri(reverse("orders-api"))
 
         filtered_orders_api_url = request.build_absolute_uri(
-            reverse("filtered-orders-api")
+            reverse("filtered-orders-api"),
         )
 
         search_query_params = SearchQueryParamsForm(params)
@@ -121,7 +120,7 @@ class OrdersTemplatePageView(TemplateView):
 class OrderPageView(TemplateView):
     template_name = "cafe_app/order_detail.html"
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         context = self.get_context_data(**kwargs)
 
         id = kwargs.get("id")
@@ -134,13 +133,13 @@ class OrderPageView(TemplateView):
 class OrderTemplatePageView(TemplateView):
     template_name = "cafe_app/order_template.html"
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         context = self.get_context_data(**kwargs)
 
         id = kwargs.get("id")
 
         order_detail_api_url = request.build_absolute_uri(
-            reverse(f"order-detail-api", kwargs={"id": id})
+            reverse("order-detail-api", kwargs={"id": id}),
         )
 
         headers = {
@@ -156,7 +155,7 @@ class OrderTemplatePageView(TemplateView):
             order = {}
             logger.error(f"Error with API: {response.status_code}")
 
-        items_api_url = request.build_absolute_uri(reverse(f"items-api"))
+        items_api_url = request.build_absolute_uri(reverse("items-api"))
 
         response = requests.get(items_api_url, headers=headers)
 
@@ -173,11 +172,8 @@ class OrderTemplatePageView(TemplateView):
         if order:
             order["items"].sort(key=lambda x: float(x.get("items_price")))
 
-        # order = {}
-        # items = []
-
         context.update(
-            {"order": order, "items": items, "Token": settings.API_TOKEN}
+            {"order": order, "items": items, "Token": settings.API_TOKEN},
         )
 
         return self.render_to_response(context)
@@ -185,7 +181,7 @@ class OrderTemplatePageView(TemplateView):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ClearLocalOrderPageView(View):
-    def post(self, request: HttpRequest, *args, **kwargs):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         name_order_items = "order_items"
 
         if name_order_items in request.session:
@@ -195,7 +191,7 @@ class ClearLocalOrderPageView(View):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ChangeLocalOrderPageView(View):
-    def post(self, request: HttpRequest, *args, **kwargs):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         data = json.loads(request.body)
         item_id = str(data.get("item_id"))
         quantityChange = int(data.get("quantity_change", 0))
@@ -224,12 +220,12 @@ class ChangeLocalOrderPageView(View):
 class CreateOrderPageView(TemplateView):
     template_name = "cafe_app/create_order.html"
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         order_items = request.session.get("order_items", {})
 
         context = self.get_context_data(**kwargs)
 
-        items_api_url = request.build_absolute_uri(reverse(f"items-api"))
+        items_api_url = request.build_absolute_uri(reverse("items-api"))
 
         headers = {
             "Content-Type": "application/json",
@@ -243,7 +239,6 @@ class CreateOrderPageView(TemplateView):
         else:
             items = []
             logger.error(f"Error with API: {response.status_code}")
-        #
         items.sort(key=lambda x: int(x.get("id")))
 
         total_price = 0
@@ -258,24 +253,25 @@ class CreateOrderPageView(TemplateView):
                 "items": items,
                 "order_items": order_items,
                 "total_price": total_price,
-            }
+            },
         )
 
         return self.render_to_response(context)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         data = json.loads(request.body)
-        numberTable = data["numberTable"]
+        number_table = data["numberTable"]
 
         order_items = request.session.get("order_items", {})
 
-        item_ids = list()
+        item_ids = []
 
         for item_id, value in order_items.items():
-            for _ in range(value):
-                item_ids.append(int(item_id))
+            item_ids.extend([int(item_id)] * value)
 
-        orders_api_url = request.build_absolute_uri(reverse(f"orders-api"))
+        orders_api_url = request.build_absolute_uri(reverse("orders-api"))
+
+        logger.info(orders_api_url)
 
         headers = {
             "Content-Type": "application/json",
@@ -285,29 +281,29 @@ class CreateOrderPageView(TemplateView):
         response = requests.post(
             orders_api_url,
             headers=headers,
-            data=json.dumps({"table_number": numberTable, "items": item_ids}),
+            data=json.dumps({"table_number": number_table, "items": item_ids}),
+            allow_redirects=False,
         )
+
+        logger.info(response.status_code)
 
         if response.status_code == 201:
             redirect_url = request.build_absolute_uri(
-                reverse("order-detail", args=[response.json()["order_id"]])
+                reverse("order-detail", args=[response.json()["order_id"]]),
             )
             return JsonResponse(
-                {"success": True, "redirect_url": redirect_url}
+                {"success": True, "redirect_url": redirect_url},
             )
-        else:
-            return JsonResponse({"success": False})
+        return JsonResponse({"success": False})
 
 
 class DeleteOrderPageView(TemplateView):
     template_name = "cafe_app/delete_order.html"
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         context = self.get_context_data(**kwargs)
 
-        id = 0
-
-        context.update({"order_id": id, "Token": settings.API_TOKEN})
+        context.update({"Token": settings.API_TOKEN})
 
         return self.render_to_response(context)
 
