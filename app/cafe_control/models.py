@@ -12,22 +12,28 @@ class Item(models.Model):
     name = models.CharField(max_length=200)
     price = models.DecimalField(max_digits=20, decimal_places=2, default=0.0)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 class Order(models.Model):
     id = models.AutoField(primary_key=True, editable=False)
     table_number = models.IntegerField()
-    items = models.ManyToManyField(
-        "Item", related_name="items", blank=True, through="OrderItem"
+    items: models.ManyToManyField = models.ManyToManyField(
+        "Item",
+        related_name="items",
+        blank=True,
+        through="OrderItem",
     )
     total_price = models.DecimalField(
-        max_digits=20, decimal_places=2, default=0.0, editable=False
+        max_digits=20,
+        decimal_places=2,
+        default=0.0,
+        editable=False,
     )
     status = models.CharField(choices=ORDER_STATUSES, default="is_pending")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Order #{self.id}"
 
 
@@ -36,8 +42,14 @@ class OrderItem(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     items_price = models.DecimalField(
-        max_digits=20, decimal_places=2, default=0.0, editable=False
+        max_digits=20,
+        decimal_places=2,
+        default=0.0,
+        editable=False,
     )
 
     class Meta:
         unique_together = ("order", "item")
+
+    def __str__(self) -> str:
+        return f"OrderItem #({self.order.id}, {self.item.id})"

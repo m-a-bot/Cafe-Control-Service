@@ -157,6 +157,7 @@
             })
             .then(response => response.json())
             .then(data => {
+                console.log(data);
                 if (data.success) {
                   window.location.href = data.redirect_url;
                   // alert('Заказ создан');
@@ -206,14 +207,6 @@
             })
             .catch(error => console.error('Error:', error));
         }
-        const container = document.querySelector('.alert-toast');
-
-        // ['primary', 'success', 'neutral', 'warning', 'danger'].map(variant => {
-        // const button = container.querySelector(`sl-button[variant="${variant}"]`);
-        // const alert = container.querySelector(`sl-alert[variant="${variant}"]`);
-
-        // button.addEventListener('click', () => alert.toast());
-        // });
     </script>
 </body>
 </html>

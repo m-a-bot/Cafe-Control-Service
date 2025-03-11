@@ -1,5 +1,3 @@
-from random import choices
-
 from django import forms
 from django.core.exceptions import ValidationError
 
@@ -15,13 +13,19 @@ class FilterQueryParamsForm(forms.Form):
     BOOL_CHOICES = [("true", True), ("false", False)]
 
     is_pending = forms.TypedChoiceField(
-        choices=BOOL_CHOICES, required=True, coerce=lambda x: x == "true"
+        choices=BOOL_CHOICES,
+        required=True,
+        coerce=lambda x: x == "true",
     )
     is_ready = forms.TypedChoiceField(
-        choices=BOOL_CHOICES, required=True, coerce=lambda x: x == "true"
+        choices=BOOL_CHOICES,
+        required=True,
+        coerce=lambda x: x == "true",
     )
     is_paid = forms.TypedChoiceField(
-        choices=BOOL_CHOICES, required=True, coerce=lambda x: x == "true"
+        choices=BOOL_CHOICES,
+        required=True,
+        coerce=lambda x: x == "true",
     )
 
 
@@ -39,7 +43,7 @@ class InfoOrderForm(forms.Form):
             raise ValidationError("items must be list")
 
         existing_ids = set(
-            Item.objects.filter(id__in=items).values_list("id", flat=True)
+            Item.objects.filter(id__in=items).values_list("id", flat=True),
         )
         missing_ids = set(items) - existing_ids
 
