@@ -1,0 +1,219 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/themes/light.css" />
+    <title>Document</title>
+    <style>
+
+    .label-on-left {
+        --label-width: 3.75rem;
+        --gap-width: 1rem;
+      }
+    
+      .label-on-left + .label-on-left {
+        margin-top: var(--sl-spacing-medium);
+      }
+    
+      .label-on-left::part(form-control) {
+        display: grid;
+        grid: auto / var(--label-width) 1fr;
+        gap: var(--sl-spacing-3x-small) var(--gap-width);
+        align-items: center;
+      }
+    
+      .label-on-left::part(form-control-label) {
+        text-align: right;
+      }
+    
+      .label-on-left::part(form-control-help-text) {
+        grid-column-start: 2;
+      }
+    </style>
+</head>
+<body>
+    {% include "cafe_app/topbar.html" %}
+
+    <div style="display: flex; flex-direction: row;">
+    
+    <div style="display: flex; flex-direction: row; margin: 10px;">
+    <div style="max-width: 25em; display: flex; flex-direction: column; padding: 0 1em;">
+        <h2 style="margin: 0px 0px 20px 0px;">Оформление заказа</h2>
+        <sl-input class="label-on-left" id="input-number-table" type="number" label="Номер стола" min="0" required></sl-input>
+        
+        <div>
+        <h3 style="display: inline-block;">Список блюд в заказе:</h3>
+        <sl-icon-button id="clear-order-button" style="padding=2px;" name="eraser" label="Eraser"></sl-icon-button>
+        <h4 style="display: inline-block; margin: 0 0 0 35px;">Итог <sl-format-number type="currency" currency="RUB" lang="ru" value="{{ total_price }}"></sl-format-number></h4>
+
+          <div id="order-items" style="padding: 0 0 0 20px;">
+          {% for item_id, value in order_items.items %}
+
+              {% with selected_item=items|get_item_by_id:item_id %}
+                  <p>
+                      {{ selected_item.name }} - <sl-format-number type="currency" currency="RUB" lang="ru" value="{{ selected_item.price }}"></sl-format-number>;
+                      Количество: {{ value }}
+                  </p>
+              {% endwith %}
+          {% empty %}
+              <p>Пустой список</p>
+          {% endfor %}
+          </div>
+
+        </div>
+
+    </div>
+    <div style="margin: 45px 0px 0px 0px;">
+        <sl-button onclick="createOrder()">Оформить заказ</sl-button>
+    </div>
+    </div>
+
+    <div style="max-width: 25em; display: flex; flex-direction: column; padding: 1em 0 0 3em;">
+
+    <h3>Список блюд </h3>
+    <!-- <div class="alert-toast">
+  <sl-button variant="primary">Primary</sl-button>
+  <sl-button variant="success">Success</sl-button>
+  <sl-button variant="neutral">Neutral</sl-button>
+  <sl-button variant="warning">Warning</sl-button>
+  <sl-button variant="danger">Danger</sl-button>
+
+  <sl-alert variant="primary" duration="3000" closable>
+    <sl-icon slot="icon" name="info-circle"></sl-icon>
+    <strong>This is super informative</strong><br />
+    You can tell by how pretty the alert is.
+  </sl-alert>
+
+  <sl-alert variant="success" duration="3000" closable>
+    <sl-icon slot="icon" name="check2-circle"></sl-icon>
+    <strong>Your changes have been saved</strong><br />
+    You can safely exit the app now.
+  </sl-alert>
+
+  <sl-alert variant="neutral" duration="3000" closable>
+    <sl-icon slot="icon" name="gear"></sl-icon>
+    <strong>Your settings have been updated</strong><br />
+    Settings will take effect on next login.
+  </sl-alert>
+
+  <sl-alert variant="warning" duration="3000" closable>
+    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+    <strong>Your session has ended</strong><br />
+    Please login again to continue.
+  </sl-alert>
+
+  <sl-alert variant="danger" duration="3000" closable>
+    <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
+    <strong>Your account has been deleted</strong><br />
+    We're very sorry to see you go!
+  </sl-alert>
+</div> -->
+
+    {% for item in items %}
+    <li style="display: flex; align-items: center;">
+        <p>
+            {{ item.name }} - <sl-format-number type="currency" currency="RUB" lang="ru" value="{{ item.price }}"></sl-format-number>
+        </p>
+
+        <div style="display: flex; justify-content: flex-end; flex: auto;">
+            <sl-tooltip content="Add item">
+                <sl-icon-button name="plus-square" label="Add item" onclick="updateOrder({{ item.id }}, 1)" ></sl-icon-button>
+            </sl-tooltip>
+            <sl-tooltip content="Remove item">
+                <sl-icon-button name="dash-square" label="Remove item" onclick="updateOrder({{ item.id }}, -1)" ></sl-icon-button>
+            </sl-tooltip>
+        </div>
+    </li>
+    {% empty %}
+    <p>Пустой список</p>
+    {% endfor %}
+        
+    </div>
+
+    </div>
+    
+
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js" ></script>
+    <script>
+          function createOrder() {
+            const inputNumberTable = document.querySelector("#input-number-table");
+            let numberTable = inputNumberTable.value;
+            if (!numberTable) {
+              alert("Заполните номер стола!");
+            }
+            fetch("{% url 'create-order' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    numberTable: numberTable
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                  window.location.href = data.redirect_url;
+                  // alert('Заказ создан');
+                } else {
+                    // alert('Ошибка при создании заказа.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        const clearOrderButton = document.querySelector('#clear-order-button');
+        clearOrderButton.addEventListener('click', function() {
+          fetch("{% url 'clear-local-order' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                  location.reload(true);
+                } else {
+                    alert('Ошибка при изменении заказа.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+        function updateOrder(itemId, quantityChange) {
+            fetch("{% url 'change-local-order' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                    quantity_change: quantityChange
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.detail == "success") {
+                  location.reload(true);
+                } else {
+                    alert('Ошибка при изменении заказа.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        const container = document.querySelector('.alert-toast');
+
+        // ['primary', 'success', 'neutral', 'warning', 'danger'].map(variant => {
+        // const button = container.querySelector(`sl-button[variant="${variant}"]`);
+        // const alert = container.querySelector(`sl-alert[variant="${variant}"]`);
+
+        // button.addEventListener('click', () => alert.toast());
+        // });
+    </script>
+</body>
+</html>

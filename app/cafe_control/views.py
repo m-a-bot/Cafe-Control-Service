@@ -91,6 +91,7 @@ class OrderView(views.View):
             for order_item in order.orderitem_set.all():
                 items_data.append(
                     {
+                        "item_id": order_item.item.id,
                         "item_name": order_item.item.name,
                         "quantity": order_item.quantity,
                         "items_price": order_item.items_price,
@@ -129,6 +130,7 @@ class OrderView(views.View):
         for order_item in order.orderitem_set.all():
             items_data.append(
                 {
+                    "item_id": order_item.item.id,
                     "item_name": order_item.item.name,
                     "quantity": order_item.quantity,
                     "items_price": order_item.items_price,
@@ -152,18 +154,14 @@ class OrderView(views.View):
             order.delete()
         except ObjectDoesNotExist:
             return JsonResponse(
-                {
-                    "detail": "Order does not exist",
-                },
+                {"detail": "Order does not exist", "success": False},
                 status=404,
             )
         except Exception:
             return http.HttpResponseBadRequest()
 
         return JsonResponse(
-            {
-                "detail": "Order was successfully deleted",
-            },
+            {"detail": "Order was successfully deleted", "success": True},
             status=200,
         )
 
@@ -180,10 +178,10 @@ class OrdersView(views.View):
         query = Q()
 
         if table_number:
-            query |= Q(table_number=table_number)
+            query &= Q(table_number=table_number)
 
         if status:
-            query |= Q(status=status)
+            query &= Q(status=status)
 
         orders = Order.objects.filter(query)
 
@@ -197,6 +195,7 @@ class OrdersView(views.View):
             ):  # Используем обратную связь через промежуточную модель
                 items_data.append(
                     {
+                        "item_id": order_item.item.id,
                         "item_name": order_item.item.name,
                         "quantity": order_item.quantity,
                         "items_price": order_item.items_price,
@@ -215,11 +214,10 @@ class OrdersView(views.View):
 
         return JsonResponse({"orders": orders_data})
 
-    @csrf_exempt
     def post(self, request: http.HttpRequest) -> HttpResponse:
         info_order = InfoOrderForm(json.loads(request.body))
         if not info_order.is_valid():
-            return http.HttpResponseBadRequest()
+            return JsonResponse({"detail": "Bad Request"}, status=400)
 
         data = info_order.cleaned_data
         item_ids = data.pop("items")
@@ -228,7 +226,8 @@ class OrdersView(views.View):
         add_items_to_order(order.id, item_ids)
 
         return JsonResponse(
-            {"detail": "Order was successfully created"}, status=201
+            {"detail": "Order was successfully created", "order_id": order.id},
+            status=201,
         )
 
 
@@ -239,7 +238,7 @@ class FilteredOrdersView(views.View):
         filter_query = FilterQueryParamsForm(request.GET)
 
         if not filter_query.is_valid():
-            return http.HttpResponseBadRequest()
+            return JsonResponse({"detail": "Bad Request"}, status=400)
 
         is_pending = filter_query.cleaned_data.get("is_pending")
         is_ready = filter_query.cleaned_data.get("is_ready")
@@ -267,6 +266,7 @@ class FilteredOrdersView(views.View):
             ):  # Используем обратную связь через промежуточную модель
                 items_data.append(
                     {
+                        "item_id": order_item.item.id,
                         "item_name": order_item.item.name,
                         "quantity": order_item.quantity,
                         "items_price": order_item.items_price,
@@ -305,6 +305,7 @@ class ChangeStatusView(views.View):
         ):  # Используем обратную связь через промежуточную модель
             items_data.append(
                 {
+                    "item_id": order_item.item.id,
                     "item_name": order_item.item.name,
                     "quantity": order_item.quantity,
                     "items_price": order_item.items_price,
@@ -317,17 +318,23 @@ class ChangeStatusView(views.View):
             "items": items_data,
             "total_price": order.total_price,
             "status": order.status,
+            "success": True,
         }
 
         return JsonResponse(order_data)
 
 
 class TotalPriceView(views.View):
-    # ok
     def get(self, request: http.HttpRequest) -> HttpResponse:
-        total_orders_price = Order.objects.aggregate(
-            total_price=Sum("total_price")
-        )
+
+        status_order_form = StatusOrderForm(request.GET)
+        if not status_order_form.is_valid():
+            orders = Order.objects
+        else:
+            status = status_order_form.cleaned_data.get("status")
+            orders = Order.objects.filter(status=status)
+
+        total_orders_price = orders.aggregate(total_price=Sum("total_price"))
         total_orders_price["total_price"] = (
             total_orders_price["total_price"] or 0
         )
@@ -351,21 +358,20 @@ class OrderItemView(views.View):
             add_items_to_order(id, item_ids)
 
         except ObjectDoesNotExist:
-            return JsonResponse({"error": "Object not found"}, status=404)
+            return JsonResponse(
+                {"error": "Object not found", "success": False}, status=404
+            )
 
-        return JsonResponse({"detail": "Item added to order"})
+        return JsonResponse({"detail": "Item added to order", "success": True})
 
     def get(self, request: http.HttpRequest, id: int) -> HttpResponse:
         try:
             order = Order.objects.get(id=id)
             items_data = []
-            for (
-                order_item
-            ) in (
-                order.orderitem_set.all()
-            ):  # Используем обратную связь через промежуточную модель
+            for order_item in order.orderitem_set.all():
                 items_data.append(
                     {
+                        "item_id": order_item.item.id,
                         "item_name": order_item.item.name,
                         "quantity": order_item.quantity,
                         "items_price": order_item.items_price,
@@ -392,3 +398,17 @@ class OrderItemView(views.View):
         except ObjectDoesNotExist:
             return JsonResponse({"error": "Object not found"}, status=404)
         return JsonResponse({"detail": "Item removed from order"})
+
+
+class ItemsView(views.View):
+    def get(self, request: http.HttpRequest) -> HttpResponse:
+        items = Item.objects.all()
+        items_data = [
+            {
+                "id": item.id,
+                "name": item.name,
+                "price": item.price,
+            }
+            for item in items
+        ]
+        return JsonResponse({"items": items_data})

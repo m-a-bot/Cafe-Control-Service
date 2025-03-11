@@ -1,0 +1,100 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/themes/light.css" />
+    <title>Document</title>
+    <style>
+        #order-not-found-container {
+        display: block;
+        }
+        table {
+        width: 100%;
+        border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        </style>
+</head>
+<body>
+    {% include "cafe_app/topbar.html" %}
+
+    <div style="place-items: center; margin: 0 auto; display: grid; height: 30vh;">
+
+    <div style="display: flex; flex-direction: column; justify-self: baseline;">
+    
+        <div style="display: flex; flex-direction: row; margin: 10px;">
+            <div style="max-width: 20em; display: flex; flex-direction: column; padding: 0 1em 0 0;">
+                <h2 style="margin: 0px 0px 20px 0px;">Поиск заказов</h2>
+                <sl-input type="number" label="Номер стола" min="0" id="input-number-table"></sl-input>
+                <br/>
+                <sl-select class="select-order-status" label="Статус заказа">
+                    <sl-option value="is_pending">в ожидании</sl-option>
+                    <sl-option value="is_ready">готово</sl-option>
+                    <sl-option value="is_paid">оплачено</sl-option>
+                </sl-select>
+
+            </div>
+            <div style="display: flex; align-items: end;">
+                <sl-button onclick="searchOrders()">Поиск</sl-button>
+            </div>
+        </div>
+        
+    </div>
+
+    </div>
+
+    <div class="orders-container" style="max-width: 85%; margin: 0 auto;">
+
+        {% include "cafe_app/orders_template.html" %}
+        
+    </div>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js" ></script>
+
+    <script>
+        function updateOrdersContent(url) {
+            const ordersContainer = document.querySelector(".orders-container");
+
+            fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                ordersContainer.innerHTML = html;
+
+                const notFoundContainer = ordersContainer.querySelector("#order-not-found-container");
+                if (notFoundContainer)
+                    notFoundContainer.style.display="block";
+            })
+            .catch(error => console.error("Ошибка загрузки:", error));
+        }
+        function searchOrders() {
+            const inputNumberTable = document.querySelector("#input-number-table");
+            const selectOrderStatus = document.querySelector(".select-order-status");
+
+            let table_number = inputNumberTable.value;
+            let orderStatus = selectOrderStatus.value;
+
+            const params = new URLSearchParams({
+                table_number: table_number,
+                status: orderStatus
+            }).toString();
+
+            const baseUrl = window.location.origin;
+
+            const url = `${baseUrl}/orders_template?${params}`;
+
+            updateOrdersContent(url);
+
+        }
+    </script>
+    
+</body>
+</html>

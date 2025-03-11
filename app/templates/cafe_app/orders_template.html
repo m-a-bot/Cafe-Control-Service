@@ -1,0 +1,44 @@
+<div>
+    {% if orders %}
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID заказа</th>
+                    <th>Номер стола</th>
+                    <th>Список блюд</th>
+                    <th>Общая стоимость</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><a href="{% url 'order-detail' order.id %}"> {{ order.id }} </a></td>
+                    <td>{{ order.table_number }}</td>
+                    <td>
+                        <ul>
+                            {% for item in order.items %}
+                                <li>{{ item.item_name }} - ({{ item.quantity }} шт. - <sl-format-number type="currency" currency="RUB" lang="ru" value="{{ item.items_price }}"></sl-format-number>)</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td><sl-format-number type="currency" currency="RUB" lang="ru" value="{{ order.total_price }}"></sl-format-number></td>
+                    <td>
+                        
+                            <sl-select value="{{ order.status }}" disabled>
+                                <sl-option value="is_pending">в ожидании</sl-option>
+                                <sl-option value="is_ready">готово</sl-option>
+                                <sl-option value="is_paid">оплачено</sl-option>
+                            </sl-select>
+                    
+                    </td>
+                </tr>
+
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <h3 style="display: none;" id="order-not-found-container">Нет заказов</h3>
+        {% endif %}
+    </div>

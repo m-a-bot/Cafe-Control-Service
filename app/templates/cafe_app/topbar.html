@@ -1,0 +1,11 @@
+<sl-breadcrumb>
+    <sl-icon name="dot" slot="separator"></sl-icon>
+    <sl-breadcrumb-item href="{% url 'home' %}">
+        <sl-icon slot="prefix" name="house"></sl-icon>
+        Home
+    </sl-breadcrumb-item>
+    <sl-breadcrumb-item href="{% url 'orders' %}">Orders</sl-breadcrumb-item>
+    <sl-breadcrumb-item href="{% url 'create-order' %}">Create order</sl-breadcrumb-item>
+    <sl-breadcrumb-item href="{% url 'delete-order' %}">Delete order</sl-breadcrumb-item>
+    <sl-breadcrumb-item href="{% url 'search-orders' %}">Search Orders</sl-breadcrumb-item>
+</sl-breadcrumb>

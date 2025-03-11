@@ -39,6 +39,12 @@ CSRF_TRUSTED_ORIGINS = [
     f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}",
 ]
 
+SESSION_ENGINE = (
+    "django.contrib.sessions.backends.db"  # Или 'cached_db', 'file'
+)
+SESSION_COOKIE_AGE = 86400  # (1 день)
+SESSION_SAVE_EVERY_REQUEST = True
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -153,9 +159,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-# STATICFILES_DIRS = [
-#     BASE_DIR / "static",
-# ]
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type

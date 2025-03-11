@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказы</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/themes/light.css" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+</head>
+<body>
+    {% include "cafe_app/topbar.html" %}
+
+    {% include "cafe_app/alerts.html" %}
+
+    <div style="place-items: center; margin: 0 auto; display: grid; height: 65vh;" class="order-container" data-url="{% url 'order_template-detail' order_id %}">
+        {% include "cafe_app/order_template.html" %}
+    </div>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js" ></script>
+    <script defer src="{% static 'js/update_order_content.js' %}"></script>
+</body>
+</html>

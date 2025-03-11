@@ -1,0 +1,238 @@
+<div style="display: flex; margin: 0 auto; max-width: 95%; flex-direction: column;">
+
+    {% if order %}
+    <div>
+    <h1>Заказ {{ order.id }}</h1>
+    </div>
+    <div>
+    <table>
+        <thead>
+            <tr>
+                <th>ID заказа</th>
+                <th>Номер стола</th>
+                <th>Список блюд в заказе</th>
+                <th>Изменить состав заказа?</th>
+                <th>Общая стоимость</th>
+                <th>Статус</th>
+                <th>Удалить заказ?</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.table_number }}</td>
+                <td>
+                    
+                        {% for item in order.items %}
+                            <li style="display: flex; align-items: center;">
+                                <p>
+                                {{ item.item_name }} - ({{ item.quantity }} шт. -  <sl-format-number type="currency" currency="RUB" lang="ru" value="{{ item.items_price }}"></sl-format-number>)
+                                </p>
+                            </li>
+                        {% endfor %}
+                    
+                </td>
+                <td>
+                    <p style="margin: 0;">Список блюд:</p>
+                    {% for item in items %}
+                        <li style="display: flex; align-items: center;">
+                            <p>
+                            {{ item.name }} -  <sl-format-number type="currency" currency="RUB" lang="ru" value="{{ item.price }}"></sl-format-number> - за 1 шт.
+                            </p>
+                            <div style="display: flex; justify-content: flex-end; flex: auto;">
+                                <sl-tooltip content="Add item">
+                                    <sl-icon-button name="plus-square" label="Add item" class="add-to-order" data-url="{% url 'order-item-api' order.id %}" data-item-id="{{ item.id }}"></sl-icon-button>
+                                </sl-tooltip>
+                                <sl-tooltip content="Remove item">
+                                    <sl-icon-button name="dash-square" label="Remove item" class="remove-from-order" data-url="{% url 'order-item-api' order.id %}" data-item-id="{{ item.id }}"></sl-icon-button>
+                                </sl-tooltip>
+                            </div>
+                        </li>
+                    {% endfor %}
+                
+                </td>
+                <td><sl-format-number type="currency" currency="RUB" lang="ru" value="{{ order.total_price }}"></sl-format-number></td>
+                <td>
+                    <sl-tooltip content="Change order status">
+                        <sl-select value="{{ order.status }}" class="change-order-status" data-url="{% url 'change-order-status-api' order.id %}">
+                            <sl-option value="is_pending">в ожидании</sl-option>
+                            <sl-option value="is_ready">готово</sl-option>
+                            <sl-option value="is_paid">оплачено</sl-option>
+                        </sl-select>
+                    </sl-tooltip>
+                </td>
+                <td>
+                    <sl-dialog label="Dialog" class="dialog-deny-close">
+                        This dialog will not close when you click on the overlay.
+                        
+                        <sl-button slot="footer" variant="danger" data-url="{% url 'order-detail-api' order.id %}">Delete</sl-button>
+                        <sl-button slot="footer" variant="primary">Close</sl-button>
+                      </sl-dialog>
+
+                      <sl-button>Delete</sl-button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div style="display: none;" id="order-not-found-container">
+    <h1>Заказ не найден</h1>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    const observer = new MutationObserver(() => {
+    const obj_to_wait = document.querySelector('.dialog-deny-close');
+    if (obj_to_wait) {
+        document.querySelector('.change-order-status').addEventListener('sl-change', function() {
+            //console.log(this.value); //добавить проверку, что статус принадлежит множеству
+            let url = this.dataset.url;
+            fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Token': `{{ Token|escapejs }}`
+                },
+                body: JSON.stringify({
+                    status: this.value,
+                })
+
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // alert_success.toast();
+                    console.log("order's status was changed");
+                    updateOrderContent();
+                } else {
+                    console.log("error");
+                    // alert_warning.toast();
+                }
+            })
+        });
+    
+
+        function deleteOrder() {
+            let url = this.dataset.url;
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Token': `{{ Token|escapejs }}`
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // alert_success.toast();
+                    console.log("order was deleted");
+                    dialog.hide();
+                    updateOrderContent();
+                } else {
+                    // alert_warning.toast();
+                }
+            })
+        }
+        const dialog = document.querySelector('.dialog-deny-close');
+        const openButton = dialog.nextElementSibling;
+        const deleteButton = dialog.querySelector('sl-button[variant="danger"]');
+        const closeButton = dialog.querySelector('sl-button[variant="primary"]');
+
+        openButton.addEventListener('click', () => dialog.show());
+        closeButton.addEventListener('click', () => dialog.hide());
+
+        deleteButton.addEventListener('click', deleteOrder)
+
+        // Prevent the dialog from closing when the user clicks on the overlay
+        dialog.addEventListener('sl-request-close', event => {
+            if (event.detail.source === 'overlay') {
+            event.preventDefault();
+            }
+        });
+
+        function addItemToOrder() {
+            const container = document.querySelector('.alert-toast');
+            const alert_success = container.querySelector(`sl-alert[variant="success"]`);
+            const alert_warning = container.querySelector(`sl-alert[variant="warning"]`);
+            
+            let url = this.dataset.url;  // Получаем URL из data-атрибута
+            if (!url) {
+                console.error("URL не найден!");
+                return;
+            }
+            let itemId = this.dataset.itemId;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Token': `{{ Token|escapejs }}`
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // alert_success.toast();
+                    console.log("item was added to order")
+                    updateOrderContent();
+                } else {
+                    // alert_warning.toast();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function removeItemFromOrder() {
+            const container = document.querySelector('.alert-toast');
+            const alert_success = container.querySelector(`sl-alert[variant="success"]`);
+            const alert_warning = container.querySelector(`sl-alert[variant="warning"]`);
+            
+            let url = this.dataset.url;  // Получаем URL из data-атрибута
+            if (!url) {
+                console.error("URL не найден!");
+                return;
+            }
+            let itemId = this.dataset.itemId;
+
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Token': `{{ Token|escapejs }}`
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("item was removed from order")
+                    updateOrderContent();
+                    // alert_success.toast();
+                } else {
+                    // alert_warning.toast();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        document.querySelectorAll(".add-to-order").forEach(button => {
+            button.addEventListener("click", addItemToOrder);
+        });
+
+        document.querySelectorAll(".remove-from-order").forEach(button => {
+            button.addEventListener("click", removeItemFromOrder);
+        });
+        // observer.disconnect();
+    }
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
+</script>
