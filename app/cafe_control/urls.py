@@ -21,6 +21,7 @@ from django.urls import path
 from .views import (
     ChangeStatusView,
     FilteredOrdersView,
+    ItemsView,
     OrderItemView,
     OrdersView,
     OrderView,
@@ -28,26 +29,27 @@ from .views import (
 )
 
 urlpatterns = [
-    path("orders/<int:id>/", OrderView.as_view(), name="order-detail"),
-    path("orders/", OrdersView.as_view(), name="orders"),
+    path("orders/<int:id>/", OrderView.as_view(), name="order-detail-api"),
+    path("orders/", OrdersView.as_view(), name="orders-api"),
     path(
         "filtered-orders/",
         FilteredOrdersView.as_view(),
-        name="filtered-orders",
+        name="filtered-orders-api",
     ),
     path(
         "orders/<int:id>/status/",
         ChangeStatusView.as_view(),
-        name="change-order-status",
+        name="change-order-status-api",
     ),
     path(
         "orders/total_price/",
         TotalPriceView.as_view(),
-        name="total-order-price",
+        name="total-order-price-api",
     ),
     path(
         "orders/<int:id>/items/",
         OrderItemView.as_view(),
-        name="order-item",
+        name="order-item-api",
     ),
+    path("items/", ItemsView.as_view(), name="items-api"),
 ]

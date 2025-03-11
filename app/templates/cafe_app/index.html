@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,8 +7,50 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/themes/light.css" />
+    <style>
+        .card-overview {
+            max-width: 300px;
+        }
+
+        .card-overview small {
+            color: var(--sl-color-neutral-500);
+        }
+
+        .card-overview [slot='footer'] {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+    </style>
 </head>
 <body>
-<h1>Home</h1>
+    {% include "cafe_app/topbar.html" %}
+
+    <div style="max-width: 60em; display: flex; flex-direction: row; margin: 10px 20px;">
+        <div style="max-width: 45em; display: flex; flex-direction: column;">
+            <div style="display: flex; flex-direction: column;">
+                <h3 style="margin: 0px;">Общий объем выручки за заказы</h3>
+                <h4 style="margin: 0px;"><sl-format-number type="currency" currency="RUB" lang="ru" value="{{ total_price }}"></sl-format-number></h4>
+            </div>
+            <br>
+            <div style="display: flex; flex-direction: column;">
+                <h3 style="margin: 0px;">Общий объем выручки за заказы со статусом “оплачено”</h3>
+                <h4 style="margin: 0px;"><sl-format-number type="currency" currency="RUB" lang="ru" value="{{ total_is_paid_price }}"></sl-format-number></h4>
+            </div>
+        </div>
+        <!-- <div style="display: flex; align-items: center; padding: 5px; justify-content: end; flex: auto;">
+          <sl-button variant="default" size="small">
+            <sl-icon slot="suffix" name="arrow-counterclockwise"></sl-icon>
+            Refresh
+        </sl-button>
+        </div> -->
+    </div>
+    
+
+
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js" ></script>
+
 </body>
 </html>

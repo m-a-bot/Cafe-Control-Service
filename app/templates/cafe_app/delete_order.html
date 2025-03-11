@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/themes/light.css" />
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <style>
+
+        .label-on-left {
+            --label-width: 3.75rem;
+            --gap-width: 1rem;
+        }
+    
+        .label-on-left + .label-on-left {
+        margin-top: var(--sl-spacing-medium);
+        }
+    
+        .label-on-left::part(form-control) {
+        display: grid;
+        grid: auto / var(--label-width) 1fr;
+        gap: var(--sl-spacing-3x-small) var(--gap-width);
+        align-items: center;
+        }
+    
+        .label-on-left::part(form-control-label) {
+        text-align: right;
+        }
+    
+        .label-on-left::part(form-control-help-text) {
+        grid-column-start: 2;
+        }
+        
+        </style>
+</head>
+<body>
+    {% include "cafe_app/topbar.html" %}
+
+    <div style="place-items: center; margin: 0 auto; display: grid; height: 35vh; max-width: 80%;">
+
+    <div style="display: flex; flex-direction: column; justify-self: baseline;">
+    
+        <div style="display: flex; flex-direction: row; margin: 10px;">
+            <div style="max-width: 20em; display: flex; flex-direction: column; padding: 0 1em 0 0;">
+                <h2 style="margin: 0px 0px 20px 0px;">Удаление заказа</h2>
+                <sl-input class="label-on-left" type="number" label="Id заказа" min="0" id="input-order-id"></sl-input>
+            
+            </div>
+            <div style="display: flex; align-items: end;">
+                <sl-button onclick="searchOrder()">Поиск</sl-button>
+            </div>
+        </div>
+
+        <div style="place-items: center; margin: 0 auto; display: grid; height: 65vh;" class="order-container">
+            {% include "cafe_app/order_template.html" %}
+        </div>
+    </div>
+
+    </div>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js" ></script>
+    <script>
+        function updateOrderContent(url) {
+            const ordersContainer = document.querySelector(".order-container");
+            // let url = ordersContainer.dataset.url;
+
+            fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                ordersContainer.innerHTML = html;
+
+                const notFoundContainer = ordersContainer.querySelector("#order-not-found-container");
+                if (notFoundContainer)
+                    notFoundContainer.style.display="block";
+            })
+            .catch(error => console.error("Ошибка загрузки:", error));
+        }
+
+        function searchOrder() {
+            const orderId = document.querySelector("#input-order-id").value;
+
+            if (!orderId) {
+                alert("Введите id заказа");
+                return;
+            }
+            
+            const url = `orders_template/${orderId}`;
+
+            updateOrderContent(url)
+        }
+    </script>
+</body>
+</html>
